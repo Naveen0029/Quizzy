@@ -94,8 +94,16 @@ var quizController = (function(){
             alert('Please Insert The Question');
             return false;
         }
+       },
+       checkAnswer: function(ans){
+           if(questionLocalStorage.getQuestionCollection()[quizProgress.questionIndex].correctAnswer === ans.textContent){
+               return true;
+           }
+           else{
+               return false;
+           }
        }
-   }
+   };
 
 })();
 
@@ -115,7 +123,11 @@ var UIController = (function(){
         questsClearBtn: document.getElementById("questions-clear-btn"), 
 
         //****Quiz Section Elements */
-        askedQuestText: document.getElementById("asked-question-text")
+        askedQuestText: document.getElementById("asked-question-text"),
+        quizOptionWrapper: document.querySelector(".quiz-options-wrapper"),
+        progressBar: document.querySelector("progress"),
+        progressPar: document.getElementById("progress"),
+        instAnsContainer: document.querySelector(".instant-answer-container")
     }
 
     return {
@@ -278,14 +290,40 @@ var UIController = (function(){
         },
 
         displayQuestion: function(storageQuestList,progress){
+            var newOptionHTML,characterArr;
+            characterArr = ['A','B','C','D','E','F'];
+
             if(storageQuestList.getQuestionCollection().length>0){
                 domItems.askedQuestText.textContent = storageQuestList.getQuestionCollection()[progress.questionIndex].questionText;
+                domItems.quizOptionWrapper.innerHTML = '';
+
+                for(var i=0;i<storageQuestList.getQuestionCollection()[progress.questionIndex].options.length;i++){
+                    newOptionHTML = '<div class="choice-' + i + '"><span class="choice-' + i + '">' + characterArr[i] + '</span><p  class="choice-' + i + '">' + storageQuestList.getQuestionCollection()[progress.questionIndex].options[i]+ '</p></div>';
+                    domItems.quizOptionWrapper.insertAdjacentHTML('beforeend',newOptionHTML);
+                }
             }
+        },
+
+        displayProgress: function(storageQuestList,progress){
+           // console.log(storageQuestList.getQuestionCollection());
+            domItems.progressBar.max = storageQuestList.getQuestionCollection().length;
+            
+            domItems.progressBar.value = progress.questionIndex + 1;
+
+            domItems.progressPar.textContent = (progress.questionIndex+1)+'/'+ storageQuestList.getQuestionCollection().length;
+        },
+        newDesign: function(ansResult,selectedAnswer){
+            domItems.quizOptionWrapper.style.cssText = "opacity:0.6; pointer-events: none;";
+
         }
     };
     
 })();
 
+
+
+
+/************************************************* */
 var controller = (function(quizCtrl,UICtrl){
     var selectedDomItems = UICtrl.getDomItems;
 
@@ -313,4 +351,17 @@ var controller = (function(quizCtrl,UICtrl){
     })
 
     UICtrl.displayQuestion(quizCtrl.getQuestionLocalStorage,quizCtrl.getQuizProgress);
+    UICtrl.displayProgress(quizCtrl.getQuestionLocalStorage,quizCtrl.getQuizProgress);
+
+    selectedDomItems.quizOptionWrapper.addEventListener('click',function(e){
+        var updatedOptionsDiv = selectedDomItems.quizOptionWrapper.querySelectorAll('div');
+
+        for(var i=0;i<updatedOptionsDiv.length;i++){
+            if(e.target.className=== 'choice-'+i){
+                var answer = document.querySelector('.quiz-options-wrapper div p.'+e.target.className);
+                var answerResult = quizCtrl.checkAnswer(answer);
+                UICtrl.newDesign(answerResult,answer);
+            }
+        }
+    });
 })(quizController,UIController);
